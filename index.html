@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Psychedelic Music Visualizer</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section class="controls">
+        <h1>Psychedelic Music Visualizer</h1>
+        <p>
+          Upload a track, choose a visual world, and watch morphing color fields react
+          to bass, mids, and highs in real time.
+        </p>
+
+        <div class="control-row">
+          <label for="fileInput">Music file</label>
+          <input id="fileInput" type="file" accept="audio/*" />
+          <small>You can also drag and drop an audio file anywhere on the page.</small>
+        </div>
+
+        <div class="control-row">
+          <label for="visualMode">Visual mode</label>
+          <select id="visualMode">
+            <option value="nebula">Nebula Drift</option>
+            <option value="liquid">Liquid Bloom</option>
+            <option value="kaleido">Kaleido Tunnel</option>
+            <option value="plasma">Plasma Veil</option>
+          </select>
+        </div>
+
+        <div class="control-row">
+          <label for="intensity">Reaction intensity</label>
+          <input id="intensity" type="range" min="0.4" max="2.2" step="0.1" value="1.2" />
+        </div>
+
+        <div class="control-row buttons">
+          <button id="playPause" disabled>Play</button>
+          <button id="stopBtn" disabled>Stop</button>
+          <button id="fullscreenBtn" type="button">Fullscreen</button>
+        </div>
+
+        <p id="status" aria-live="polite">Upload an audio file to begin.</p>
+      </section>
+
+      <section class="stage" id="dropZone">
+        <canvas id="visualizerCanvas"></canvas>
+      </section>
+    </main>
+
+    <audio id="audio" crossorigin="anonymous" preload="metadata"></audio>
+    <script src="script.js"></script>
+  </body>
+</html>
