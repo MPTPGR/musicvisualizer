@@ -1,10 +1,10 @@
  (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
 diff --git a/script.js b/script.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..0e3f228206415f93730f6ab46afee4ad394d0c7f
+index 0000000000000000000000000000000000000000..6458d87f89d78e2097d257068a80cba654980663
 --- /dev/null
 +++ b/script.js
-@@ -0,0 +1,355 @@
+@@ -0,0 +1,373 @@
 +const fileInput = document.getElementById('fileInput');
 +const visualMode = document.getElementById('visualMode');
 +const intensityInput = document.getElementById('intensity');
@@ -64,6 +64,10 @@ index 0000000000000000000000000000000000000000..0e3f228206415f93730f6ab46afee4ad
 +}
 +
 +function getAudioMetrics() {
++  if (!analyser) {
++    return { bass: 0.1, mids: 0.08, highs: 0.06, energy: 0.08 };
++  }
++
 +  const frequencyData = new Uint8Array(analyser.frequencyBinCount);
 +  analyser.getByteFrequencyData(frequencyData);
 +
@@ -198,11 +202,7 @@ index 0000000000000000000000000000000000000000..0e3f228206415f93730f6ab46afee4ad
 +  }
 +}
 +
-+function drawFrame(time) {
-+  if (!analyser || audio.paused) return;
-+
-+  const metrics = getAudioMetrics();
-+
++function drawByMode(time, metrics) {
 +  switch (visualMode.value) {
 +    case 'liquid':
 +      drawLiquidBloom(time, metrics);
@@ -218,7 +218,20 @@ index 0000000000000000000000000000000000000000..0e3f228206415f93730f6ab46afee4ad
 +      drawNebula(time, metrics);
 +      break;
 +  }
++}
 +
++function drawFrame(time) {
++  const playing = !audio.paused && analyser;
++  const metrics = playing
++    ? getAudioMetrics()
++    : {
++        bass: 0.16 + Math.sin(time * 0.0012) * 0.05,
++        mids: 0.14 + Math.sin(time * 0.0017) * 0.04,
++        highs: 0.12 + Math.cos(time * 0.0019) * 0.04,
++        energy: 0.14 + Math.sin(time * 0.0015) * 0.04
++      };
++
++  drawByMode(time, metrics);
 +  animationId = requestAnimationFrame(drawFrame);
 +}
 +
@@ -237,13 +250,17 @@ index 0000000000000000000000000000000000000000..0e3f228206415f93730f6ab46afee4ad
 +  audio.currentTime = 0;
 +  playPauseBtn.textContent = 'Play';
 +  setStatus(message);
-+  cancelAnimationFrame(animationId);
-+  clearWithTrail(1);
++}
++
++function fileLooksLikeAudio(file) {
++  if (!file) return false;
++  if (file.type && file.type.startsWith('audio/')) return true;
++  return /\.(mp3|wav|m4a|aac|ogg|flac|webm)$/i.test(file.name || '');
 +}
 +
 +function loadAudioFile(file) {
-+  if (!file || !file.type.startsWith('audio/')) {
-+    setStatus('Please provide a valid audio file.');
++  if (!fileLooksLikeAudio(file)) {
++    setStatus('Please provide a valid audio file (mp3, wav, m4a, ogg, etc.).');
 +    return;
 +  }
 +
@@ -255,7 +272,7 @@ index 0000000000000000000000000000000000000000..0e3f228206415f93730f6ab46afee4ad
 +
 +  enablePlaybackControls(true);
 +  playPauseBtn.textContent = 'Play';
-+  setStatus(`Loaded: ${file.name}`);
++  setStatus(`Loaded: ${file.name}. Press Play.`);
 +}
 +
 +async function onPlayPause() {
@@ -279,7 +296,8 @@ index 0000000000000000000000000000000000000000..0e3f228206415f93730f6ab46afee4ad
 +      setStatus('Paused.');
 +    }
 +  } catch (error) {
-+    setStatus(`Playback error: ${error.message}`);
++    const details = error?.message ? ` ${error.message}` : '';
++    setStatus(`Playback failed.${details} Try another file format (wav/mp3/ogg).`);
 +  }
 +}
 +
@@ -289,7 +307,6 @@ index 0000000000000000000000000000000000000000..0e3f228206415f93730f6ab46afee4ad
 +
 +  const file = event.dataTransfer.files?.[0];
 +  if (file) {
-+    fileInput.files = event.dataTransfer.files;
 +    loadAudioFile(file);
 +  }
 +}
@@ -360,6 +377,7 @@ index 0000000000000000000000000000000000000000..0e3f228206415f93730f6ab46afee4ad
 +resizeCanvas();
 +clearWithTrail(1);
 +enablePlaybackControls(false);
++startVisualization();
  
 EOF
 )
